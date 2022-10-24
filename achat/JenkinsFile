@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+    tools {
+    	maven 'M2_HOME'
+    }
+    stages {
+      
+        stage(' GIT ') {
+            steps {
+                echo 'Pulliing ...';
+                git branch: 'abdelmomen', url: 'https://github.com/abdelmomen-bz/Achat-5ARCTIC4.git'          
+            }
+        }
+        
+          stage('MVN VERSION') {
+		    steps {
+		    sh """mvn -version"""
+	        }
+	    }
+      
+	stage('COMPILING') {
+      		steps {
+        		sh 'mvn compile'
+      		}
+    	}
+	    stage('MVN BUILD') {
+steps {
+        		sh "mvn clean package -DskipTests=true"
+				archive 'target/*.jar'
+      		}
+    	}
+	    
+	    stage('SONARQUBE') {
+		    steps {
+		    sh "mvn sonar:sonar -Dsonar.projectKey=key -Dsonar.host.url=http://192.168.10.141:9000 -Dsonar.login=f87244035adf3da4cf4ae6b484c856d215538fff"
+	        }
+	    }
+		
+		stage('NEXUS') {
+			steps {
+				sh'mvn clean deploy -Dmaven.test.skip=true -Dresume=false'
+			}
+		}
